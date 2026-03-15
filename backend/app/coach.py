@@ -9,10 +9,11 @@ import anthropic
 
 from .config import ANTHROPIC_API_KEY, COACHING_INTERVAL_SEC, COACHING_MODEL, SYSTEM_PROMPT
 from .stt_base import TranscriptSegment
+from .knowledge_base import KnowledgeBase
 
 
 class CoachingEngine:
-    def __init__(self, on_cards: Callable[[list[dict]], Awaitable[None]]):
+    def __init__(self, on_cards: Callable[[list[dict]], Awaitable[None]], knowledge_base: KnowledgeBase | None = None):
         self._client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
         self._transcript: list[TranscriptSegment] = []
         self._last_analysis_idx = 0
@@ -20,6 +21,7 @@ class CoachingEngine:
         self._on_cards = on_cards
         self._running = False
         self._task = None
+        self._kb = knowledge_base
 
     async def start(self) -> None:
         self._running = True
@@ -57,13 +59,25 @@ class CoachingEngine:
             f"[{seg.speaker}] {seg.text}" for seg in new_segments
         )
 
+        # Search knowledge base for relevant context
+        kb_section = ""
+        if self._kb:
+            query = " ".join(seg.text for seg in new_segments[-5:])
+            try:
+                chunks = self._kb.search(query, top_k=3)
+                if chunks:
+                    kb_section = "\n\n## Relevant Context From Research\n" + "\n---\n".join(chunks)
+            except Exception as e:
+                print(f"KB search error: {e}")
+
         user_msg = f"""## Full Transcript So Far
 {full_transcript}
 
 ## New Content (analyze this for coaching opportunities)
-{new_text}
+{new_text}{kb_section}
 
-Provide coaching cards as JSON array. Return [] if no coaching needed."""
+Provide coaching cards as JSON array. Return [] if no coaching needed.
+You may also use type REFERENCE for cards that surface directly relevant info from the research context."""
 
         try:
             response = await self._client.messages.create(

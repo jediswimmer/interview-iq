@@ -6,3 +6,7 @@ pyaudio==0.2.14
 numpy==1.26.4
 faster-whisper==1.1.0
 python-dotenv==1.0.1
+sentence-transformers
+faiss-cpu
+pypdf2
+python-docx

@@ -16,6 +16,7 @@ const CARD_COLORS = {
   STRATEGY: { border: '#a78bfa', bg: 'rgba(167, 139, 250, 0.08)', icon: '🎯' },
   METRIC: { border: '#34d399', bg: 'rgba(52, 211, 153, 0.08)', icon: '📊' },
   BRIDGE: { border: '#fbbf24', bg: 'rgba(251, 191, 36, 0.08)', icon: '🌉' },
+  REFERENCE: { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.08)', icon: '📚' },
 }
 
 function App() {
@@ -29,6 +30,10 @@ function App() {
   const [selectedDevice, setSelectedDevice] = useState(null)
   const [sttProvider, setSttProvider] = useState('')
   const [error, setError] = useState(null)
+  const [researchCards, setResearchCards] = useState([])
+  const [kbStatus, setKbStatus] = useState({ doc_count: 0, files: [] })
+  const [kbOpen, setKbOpen] = useState(false)
+  const [kbReloading, setKbReloading] = useState(false)
 
   const wsRef = useRef(null)
   const transcriptEndRef = useRef(null)
@@ -50,13 +55,12 @@ function App() {
     return () => clearInterval(timerRef.current)
   }, [running, paused])
 
-  // Auto-expire coaching cards after 30s
+  // Auto-expire coaching cards after 30s, research cards after 60s
   useEffect(() => {
     const interval = setInterval(() => {
-      setCoachingCards(cards => {
-        const now = Date.now()
-        return cards.filter(c => now - c._addedAt < 30000)
-      })
+      const now = Date.now()
+      setCoachingCards(cards => cards.filter(c => now - c._addedAt < 30000))
+      setResearchCards(cards => cards.filter(c => now - c._addedAt < 60000))
     }, 2000)
     return () => clearInterval(interval)
   }, [])
@@ -76,13 +80,25 @@ function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [running])
 
-  // Fetch devices on mount
+  // Fetch devices and KB status on mount
   useEffect(() => {
     fetch(`${API_URL}/devices`)
       .then(r => r.json())
       .then(setDevices)
       .catch(() => {})
+    fetch(`${API_URL}/knowledge/status`)
+      .then(r => r.json())
+      .then(setKbStatus)
+      .catch(() => {})
   }, [])
+
+  const reloadKb = () => {
+    setKbReloading(true)
+    fetch(`${API_URL}/knowledge/reload`, { method: 'POST' })
+      .then(r => r.json())
+      .then(s => { setKbStatus(s); setKbReloading(false) })
+      .catch(() => setKbReloading(false))
+  }
 
   // WebSocket connection
   const connectWs = useCallback(() => {
@@ -121,6 +137,15 @@ function App() {
         setCoachingCards(prev => [...newCards, ...prev].slice(0, 4))
       }
 
+      if (msg.type === 'research') {
+        const newCards = msg.cards.map(card => ({
+          ...card,
+          _id: ++cardIdRef.current,
+          _addedAt: Date.now(),
+        }))
+        setResearchCards(newCards.slice(0, 3))
+      }
+
       if (msg.type === 'status') {
         setPaused(msg.paused)
       }
@@ -152,6 +177,7 @@ function App() {
     setElapsed(0)
     setTranscript([])
     setCoachingCards([])
+    setResearchCards([])
   }
 
   const stopSession = () => {
@@ -175,6 +201,26 @@ function App() {
           </div>
           <div className="interview-info">
             VP Partnerships — Monday 4:30 PM
+          </div>
+          <div className="kb-indicator" onClick={() => setKbOpen(!kbOpen)}>
+            <span>📚 {kbStatus.doc_count} docs</span>
+            {kbOpen && (
+              <div className="kb-popover">
+                <div className="kb-popover-header">
+                  <strong>Knowledge Base</strong>
+                  <button className="btn btn-kb-reload" onClick={e => { e.stopPropagation(); reloadKb() }} disabled={kbReloading}>
+                    {kbReloading ? '...' : 'Reload'}
+                  </button>
+                </div>
+                {kbStatus.files?.length > 0 ? (
+                  <ul className="kb-file-list">
+                    {kbStatus.files.map(f => <li key={f}>{f}</li>)}
+                  </ul>
+                ) : (
+                  <p className="kb-empty">No documents indexed</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -300,6 +346,33 @@ function App() {
                 </div>
               )
             })}
+          </div>
+        </section>
+
+        {/* Research Panel */}
+        <section className="research-panel">
+          <div className="panel-header">
+            <h2>Research</h2>
+            {researchCards.length > 0 && (
+              <span className="research-badge">{researchCards.length}</span>
+            )}
+          </div>
+
+          <div className="research-scroll">
+            {researchCards.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">🔬</div>
+                <p>{running ? 'Scanning for terms...' : 'Term definitions will appear here'}</p>
+              </div>
+            )}
+
+            {researchCards.map(card => (
+              <div key={card._id} className="research-card">
+                <h3 className="research-term">{card.term}</h3>
+                <p className="research-definition">{card.definition}</p>
+                <p className="research-relevance">{card.relevance}</p>
+              </div>
+            ))}
           </div>
         </section>
       </main>

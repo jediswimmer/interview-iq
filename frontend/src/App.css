@@ -198,7 +198,7 @@
 }
 
 /* Panel shared */
-.transcript-panel, .coaching-panel {
+.transcript-panel, .coaching-panel, .research-panel {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -412,4 +412,123 @@
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   margin: 0 2px;
+}
+
+/* ---- Knowledge Base Indicator ---- */
+.kb-indicator {
+  position: relative;
+  font-size: 12px;
+  color: var(--accent-amber);
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.kb-indicator:hover {
+  background: rgba(245, 158, 11, 0.18);
+}
+.kb-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 260px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px;
+  z-index: 100;
+  animation: fadeInUp 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.kb-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.btn-kb-reload {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent-amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn-kb-reload:hover { background: rgba(245, 158, 11, 0.2); }
+.kb-file-list {
+  list-style: none;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.kb-file-list li {
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.kb-file-list li:last-child { border-bottom: none; }
+.kb-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- Research Panel ---- */
+.research-panel {
+  width: 300px;
+  min-width: 300px;
+  background: rgba(15, 23, 42, 0.4);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.research-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.12);
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.research-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.research-card {
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border-left: 4px solid #7c3aed;
+  background: rgba(124, 58, 237, 0.06);
+  animation: fadeInUp 0.4s ease;
+  transition: opacity 0.5s ease;
+}
+
+.research-term {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a78bfa;
+  margin-bottom: 6px;
+  letter-spacing: -0.2px;
+}
+
+.research-definition {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.research-relevance {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  font-style: italic;
 }
